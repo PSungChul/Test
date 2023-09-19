@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToyBox</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <header>
+        <!-- 로고 구역 -->
+        <div class="logoArea">
+            <a href="/"><img src="/img/logo/ToyBoxLogo.png" alt="메가박스 로고"></a>
+        </div>
+
+        <!-- 메뉴 구역 -->
+        <nav class="menuArea">
+            <ul>
+                <li><a href="#">영화</a></li>
+                <li><a href="#">상영관</a></li>
+                <li><a href="#">이벤트</a></li>
+                <li><a href="#">고객센터</a></li>
+            </ul>
+        </nav>
+
+        <!-- 로그인 구역 -->
+        <nav class="loginArea">
+            <ul>
+                <li sec:authorize="isAnonymous()">로그인을 해주시기 바랍니다!</li>
+                <li sec:authorize="isAnonymous()"><a href="/loginform">로그인</a></li>
+                <li sec:authorize="isAuthenticated()"><span th:text="${name}"></span>님 어서오세요!!</li>
+                <li sec:authorize="isAuthenticated()"><a href="/logout">로그아웃</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="banner">
+            <img th:src="@{'https://image.tmdb.org/t/p/original' + ${movieBanner}}" alt="메인 배너">
+        </section>
+
+        <section class="movies">
+            <h2>상영 영화</h2>
+            <div id="movie-list" class="movie-list">
+                <!-- 동적으로 생성될 영화 목록 -->
+            </div>
+        </section>
+
+        <section class="event">
+            <h2>이벤트</h2>
+            <div class="event-item">
+                <img src="/img/logo/ToyBox_ImageLogo.png" alt="이벤트 1">
+                <h3>이벤트 제목</h3>
+                <p>이벤트 설명</p>
+            </div>
+            <div class="event-item">
+                <img src="/img/logo/ToyBox_ImageLogo.png" alt="이벤트 2">
+                <h3>이벤트 제목</h3>
+                <p>이벤트 설명</p>
+            </div>
+            <!-- 추가 이벤트 아이템들 -->
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>토이박스 정보</p>
+            <ul>
+                <li><a href="#">이용약관</a></li>
+                <li><a href="#">개인정보처리방침</a></li>
+                <li><a href="#">고객센터</a></li>
+            </ul>
+        </div>
+        <div class="social-links">
+            <a href="#"><img src="/img/logo/ToyBox_ImageLogo.png" alt="페이스북"></a>
+            <a href="#"><img src="/img/logo/ToyBox_ImageLogo.png" alt="인스타그램"></a>
+            <a href="#"><img src="/img/logo/ToyBox_ImageLogo.png" alt="유튜브"></a>
+        </div>
+    </footer>
+</body>
+<script th:inline="javascript">
+    var movieList = [[${movieList}]];
+
+    // 영화 목록 생성
+    var movieListContainer = document.getElementById("movie-list");
+    var slideInterval = 3000; // 슬라이드 간격 (5초)
+
+    // 초기에는 4개의 영화 아이템만 보이도록 설정
+    var initialItems = movieList.slice(0, 4);
+    for (var i = 0; i < initialItems.length; i++) {
+        var movieItem = createMovieItem(initialItems[i], i);
+        movieListContainer.appendChild(movieItem);
+    }
+
+    // 슬라이드 애니메이션 시작
+    var currentSlide = initialItems.length - 1;
+    var maxSlide = movieList.length - 1;
+    var isSlideRunning = true;
+
+    function slideMovies() {
+        if (!isSlideRunning) {
+            return;
+        }
+
+        var nextSlide = (currentSlide + 1) % movieList.length;
+
+        var movieItemToRemove = movieListContainer.firstElementChild;
+        movieListContainer.removeChild(movieItemToRemove);
+
+        var movieItemToAdd = createMovieItem(movieList[nextSlide]);
+        movieListContainer.appendChild(movieItemToAdd);
+
+        currentSlide = nextSlide;
+    }
+
+    var slideIntervalId = setInterval(slideMovies, slideInterval);
+
+    // 마우스 호버 시 슬라이드 멈춤
+    movieListContainer.addEventListener("mouseenter", function() {
+        clearInterval(slideIntervalId);
+        isSlideRunning = false;
+    });
+
+    // 마우스 이탈 시 슬라이드 다시 시작
+    movieListContainer.addEventListener("mouseleave", function() {
+        slideIntervalId = setInterval(slideMovies, slideInterval);
+        isSlideRunning = true;
+    });
+
+    // 영화 아이템 생성 함수
+    function createMovieItem(movieData, i) {
+        var movieItem = document.createElement('div');
+        movieItem.classList.add('movie-item');
+
+        var movieTitle = document.createElement('h3');
+        movieTitle.textContent = movieData.movieTitle;
+
+        var movieImg = document.createElement('img');
+        movieImg.src = "https://image.tmdb.org/t/p/original" + movieData.movieImage;
+        movieImg.classList.add('front');
+        movieImg.alt = "영화 " + (i + 1);
+
+        var movieDescription = document.createElement('div');
+        movieDescription.classList.add('back');
+        movieDescription.textContent = movieData.movieOverview;
+
+        movieItem.appendChild(movieImg);
+        movieItem.appendChild(movieDescription);
+        movieItem.appendChild(movieTitle);
+
+        // 이미지가 로드된 후에 .back 요소의 크기를 조정
+        movieImg.addEventListener("load", () => {
+            const imgWidth = movieImg.offsetWidth;
+            const imgHeight = movieImg.offsetHeight;
+            movieDescription.style.width = `${imgWidth}px`;
+            movieDescription.style.height = `${imgHeight}px`;
+        });
+
+        return movieItem;
+    }
+</script>
+</html>
